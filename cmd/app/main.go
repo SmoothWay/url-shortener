@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/SmoothWay/url-shortener/internal/config"
+	"github.com/SmoothWay/url-shortener/internal/lib/logger/sl"
+	"github.com/SmoothWay/url-shortener/internal/storage/sqlite"
 	"golang.org/x/exp/slog"
 )
 
@@ -21,9 +23,13 @@ func main() {
 	log.Info("Starting url-shortener", slog.String("env", cfg.Env))
 	log.Debug("Debug message")
 
-	// TODO: init logger: slog
+	storage, err := sqlite.New(cfg.Storage)
+	if err != nil {
+		log.Error("failed to init storage", sl.Err(err))
+		return
+	}
 
-	// TODO: init storage: sqlite
+	_ = storage
 
 	// TODO: init router: chi, chi/render
 
