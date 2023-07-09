@@ -1,11 +1,13 @@
 package save
 
 import (
+	"errors"
 	"net/http"
 
 	resp "github.com/SmoothWay/url-shortener/internal/lib/api/response"
 	"github.com/SmoothWay/url-shortener/internal/lib/logger/sl"
 	"github.com/SmoothWay/url-shortener/internal/lib/random"
+	"github.com/SmoothWay/url-shortener/internal/storage"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -24,6 +26,7 @@ type Response struct {
 	Alias string `json:"alias,omitempty"`
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=URLSaver
 type URLSaver interface {
 	SaveURL(urlToSave string, alias string) (int64, error)
 }
@@ -62,5 +65,28 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		if alias == "" {
 			alias = random.NewRandomString(aliasLength)
 		}
+
+		id, err := urlSaver.SaveURL(req.URL, alias)
+		if err != nil {
+			if errors.Is(err, storage.ErrURLExists) {
+				log.Info("url already exists", slog.String("url", req.URL))
+
+				render.JSON(w, r, resp.Error("url already exists"))
+
+				return
+			}
+			log.Error("failed to add url", sl.Err(err))
+
+			render.JSON(w, r, resp.Error("failder to add url"))
+			return
+		}
+
+		log.Info("url added", slog.Int64("id", id))
+
+		render.JSON(w, r, Response{
+			Response: resp.OK(),
+			Alias:    alias,
+		})
+
 	}
 }
