@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/SmoothWay/url-shortener/internal/config"
+	"github.com/SmoothWay/url-shortener/internal/http-server/handlers/delete"
+	"github.com/SmoothWay/url-shortener/internal/http-server/handlers/redirect"
 	"github.com/SmoothWay/url-shortener/internal/http-server/handlers/url/save"
 	mw "github.com/SmoothWay/url-shortener/internal/http-server/middleware"
 	"github.com/SmoothWay/url-shortener/internal/lib/logger/handlers/slogpretty"
@@ -44,6 +46,8 @@ func main() {
 	r.Use(middleware.URLFormat)
 
 	r.Post("/url", save.New(log, storage))
+	r.Get("/{alias}", redirect.New(log, storage))
+	r.Delete("/{alias}", delete.Delete(log, storage))
 
 	log.Info("starting server", slog.String("address", cfg.Address))
 
