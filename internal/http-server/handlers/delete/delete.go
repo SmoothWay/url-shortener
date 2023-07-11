@@ -34,6 +34,7 @@ func Delete(log *slog.Logger, deleter URLDeleter) http.HandlerFunc {
 		if alias == "" {
 
 			log.Error("alias is empty")
+			w.WriteHeader(http.StatusBadRequest)
 
 			render.JSON(w, r, "invalid request")
 
@@ -44,6 +45,7 @@ func Delete(log *slog.Logger, deleter URLDeleter) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, storage.ErrURLNotFound) {
 				log.Error("alias not found")
+				w.WriteHeader(http.StatusNotFound)
 
 				render.JSON(w, r, "no such alias")
 
@@ -51,6 +53,7 @@ func Delete(log *slog.Logger, deleter URLDeleter) http.HandlerFunc {
 			}
 
 			log.Error("failed to get url:", err)
+			w.WriteHeader(http.StatusInternalServerError)
 
 			render.JSON(w, r, "internal error")
 

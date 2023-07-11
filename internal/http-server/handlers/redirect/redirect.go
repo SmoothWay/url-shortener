@@ -13,6 +13,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@v2.28.2 --name=URLGetter
 type URLGetter interface {
 	GetURL(alias string) (string, error)
 }
@@ -29,7 +30,7 @@ func New(log *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 
 		if alias == "" {
 			log.Info("alias is empty")
-
+			w.WriteHeader(http.StatusBadRequest)
 			render.JSON(w, r, resp.Error("invalid request"))
 
 			return
@@ -39,6 +40,7 @@ func New(log *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, storage.ErrURLNotFound) {
 				log.Info("url not found", "alias", alias)
+				w.WriteHeader(http.StatusNotFound)
 
 				render.JSON(w, r, resp.Error("not found"))
 
@@ -46,6 +48,7 @@ func New(log *slog.Logger, urlGetter URLGetter) http.HandlerFunc {
 			}
 
 			log.Error("failed to get url", sl.Err(err))
+			w.WriteHeader(http.StatusInternalServerError)
 
 			render.JSON(w, r, resp.Error("internal error"))
 
